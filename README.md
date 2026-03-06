@@ -1,138 +1,51 @@
-# OpenClaw 模型接入指南
+# OpenClaw 影子模型目录
 
 [English README](./README.en.md)
 
-这个仓库现在包含两类内容：
+这个仓库现在以 `Shadow Model Registry` 为主，用来处理一种很常见的空窗期问题：
 
-- `Gemini 3.1 Pro API 路线`：适合把 OpenClaw 稳定接到 `google/gemini-3.1-pro-preview`
-- `影子模型目录 / Shadow Model Registry`：适合在 OpenClaw 上游 catalog 还没跟进时，本地先补丁接入新模型，并带真实 healthcheck 与自动回滚
+- 新模型已经发布
+- OpenClaw 配置层能写
+- 但上游 catalog / provider / thinking whitelist / 显示层还没完全跟上
 
-快速入口：
+目标不是“手改一堆配置碰碰运气”，而是提供一套可复用的本地前向兼容机制：
 
-- Gemini 教程：[`./examples/openclaw.snippet.json`](./examples/openclaw.snippet.json)
-- 影子模型目录：[`./shadow-model-registry/README.md`](./shadow-model-registry/README.md)
+1. 用 overrides 统一描述新模型补丁
+2. 同步到 `openclaw.json`、agent `models.json`、必要时 `sessions.json`
+3. 执行 `config validate`
+4. 执行 `models status`
+5. 执行真实 `agent healthcheck`
+6. 失败自动回滚
 
----
+## 快速入口
 
-# OpenClaw 接入 Gemini 3.1 Pro（API 路线）
+- 主说明：[`./shadow-model-registry/README.md`](./shadow-model-registry/README.md)
+- 英文说明：[`./shadow-model-registry/README.en.md`](./shadow-model-registry/README.en.md)
+- 主脚本：[`./shadow-model-registry/openclaw-model-patch.py`](./shadow-model-registry/openclaw-model-patch.py)
+- `openai-codex/gpt-5.4` 示例：[`./shadow-model-registry/examples/openai-codex-gpt-5.4.json`](./shadow-model-registry/examples/openai-codex-gpt-5.4.json)
 
-这份教程用于把 OpenClaw 稳定切到 `google/gemini-3.1-pro-preview`，并可选绑定 Discord 专用频道。  
-核心思路：不用 OAuth，直接用 `GEMINI_API_KEY`。
+## 为什么单独做这个仓库
 
-## 适用范围
+- 这套机制不绑定某一个模型供应商
+- 不只适用于 OpenAI / Codex，也适用于 Gemini 等“新模型先发布、框架后补支持”的场景
+- 它解决的是 OpenClaw 的一个长期问题类型，而不是某一次单点接入
 
-- OpenClaw：`2026.2.19-2`（及相近版本）
-- 系统：macOS（其他系统命令同理）
-- 目标模型：`gemini-3.1-pro-preview`
-- 更新时间：2026-02-20
+## 当前状态
 
-## 1. 准备 API Key
+- `openai-codex/gpt-5.4` 已在本地 OpenClaw `2026.3.2` 实战跑通
+- `models list --all` 的显示层漏项问题也已定位并本地补平
+- 相关发现已经整理并反馈到 OpenClaw 上游 issues
 
-在 [Google AI Studio](https://aistudio.google.com/) 创建 Gemini API Key，然后写入本地环境文件：
+## 历史归档
 
-```bash
-read -s "GEMINI_API_KEY?粘贴 GEMINI_API_KEY 后回车: "; echo
-mkdir -p ~/.openclaw
-if rg -q '^GEMINI_API_KEY=' ~/.openclaw/.env 2>/dev/null; then
-  sed -i '' "s|^GEMINI_API_KEY=.*|GEMINI_API_KEY=$GEMINI_API_KEY|" ~/.openclaw/.env
-else
-  printf '\nGEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" >> ~/.openclaw/.env
-fi
-unset GEMINI_API_KEY
-```
+早期这个仓库主要记录 `Gemini 3.1 Pro API` 接入路径。由于官方现已补齐支持，这部分内容不再作为主线维护，已归档到：
 
-## 2. 更新 `~/.openclaw/openclaw.json`
+- [`./archive/gemini-3.1-pro/README.md`](./archive/gemini-3.1-pro/README.md)
 
-在配置中加入以下四类内容：
-
-1. `agents.defaults.models` 放行 `google/gemini-3.1-pro-preview`
-2. `models.providers.google` 声明 API 路径和模型目录
-3. 新建 `gemini` agent（主模型 3.1，回退 3.0）
-4. （可选）把指定 Discord 频道绑定到 `gemini` agent
-
-可参考：[`examples/openclaw.snippet.json`](./examples/openclaw.snippet.json)
-
-> 注意：这不是完整配置文件，只是最小片段。请合并到你现有 `openclaw.json` 对应位置。
-
-## 3. 重启网关
+如果你只想直接开始使用影子模型目录，从这里走：
 
 ```bash
-openclaw gateway restart
-openclaw gateway status --json
+python3 shadow-model-registry/openclaw-model-patch.py \
+  --overrides shadow-model-registry/examples/openai-codex-gpt-5.4.json \
+  --dry-run
 ```
-
-`status` 里看到 `running` 且 `rpc.ok=true` 即正常。
-
-## 4. 验收（必须做）
-
-先看模型解析：
-
-```bash
-openclaw models status --json --agent gemini
-```
-
-应看到：
-
-- `defaultModel = google/gemini-3.1-pro-preview`
-- `resolvedDefault = google/gemini-3.1-pro-preview`
-
-再做一次真实调用：
-
-```bash
-openclaw agent --local --agent gemini --message '只回复 OK' --json --timeout 45
-```
-
-应看到：
-
-- `payloads[0].text = OK`
-- `meta.agentMeta.provider = google`
-- `meta.agentMeta.model = gemini-3.1-pro-preview`
-
-## 5. 常见报错与解决
-
-### `Unknown model: google/gemini-3.1-pro-preview`
-
-- 原因：`models.providers.google.models` 没有注册 `gemini-3.1-pro-preview`
-- 处理：按示例片段补齐 provider 目录和模型 ID，再重启网关
-
-### `ERR_CONNECTION_REFUSED (localhost)`
-
-- 原因：OpenClaw gateway 未启动或端口异常
-- 处理：执行 `openclaw gateway restart`，再 `openclaw gateway status --json` 检查
-
-### `HTTP 401 ... VERCEL_OIDC_TOKEN`
-
-- 这是 Vercel AI Gateway 的 OIDC 路线报错，不是 Google API 路线
-- 如果走本教程 API 路线，忽略该报错并使用 `GEMINI_API_KEY`
-
-## 6. Discord 专用频道示例
-
-在 `router.bindings` 增加：
-
-```json
-{
-  "agentId": "gemini",
-  "match": {
-    "channel": "discord",
-    "peer": { "kind": "channel", "id": "REPLACE_WITH_CHANNEL_ID" }
-  }
-}
-```
-
-这样该频道就会固定走 `gemini` agent（即 3.1 Pro）。
-
-## 7. 安全建议
-
-- 不要提交 `~/.openclaw/.env`
-- 不要把真实 API Key 放到 GitHub
-- 分享截图前打码邮箱、Token、Project ID
-
----
-
-如果你只需要“一条命令验证是否成功”，用这条：
-
-```bash
-openclaw agent --local --agent gemini --message '只回复 OK' --json --timeout 45 | jq -r '.meta.agentMeta | "\(.provider) \(.model)"'
-```
-
-输出 `google gemini-3.1-pro-preview` 即通过。

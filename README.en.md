@@ -1,122 +1,53 @@
-# OpenClaw Model Integration Guide
+# OpenClaw Shadow Model Registry
 
 [中文说明](./README.md)
 
-This repository now contains two tracks:
+This repository is now focused on a reusable `Shadow Model Registry` workflow for OpenClaw.
 
-- `Gemini 3.1 Pro API path`: use OpenClaw with `google/gemini-3.1-pro-preview`
-- `Shadow Model Registry`: locally patch OpenClaw when upstream model catalogs lag behind newly released models
+It is designed for the gap between:
 
-Quick links:
+- a model already being released upstream
+- OpenClaw accepting the config shape
+- but provider wiring, catalogs, thinking whitelists, or display-layer commands still lagging behind
 
-- Gemini snippet: [`./examples/openclaw.snippet.json`](./examples/openclaw.snippet.json)
-- Shadow Model Registry: [`./shadow-model-registry/README.en.md`](./shadow-model-registry/README.en.md)
+The goal is not to hand-edit live config and hope for the best. The goal is to provide a repeatable forward-compat workflow that:
 
----
+1. describes new-model patches in a single overrides file
+2. syncs them into `openclaw.json`, agent `models.json`, and when needed `sessions.json`
+3. runs `config validate`
+4. runs `models status`
+5. runs a real `agent` healthcheck
+6. auto-rolls back on failure
 
-# OpenClaw + Gemini 3.1 Pro via API
+## Quick links
 
-This guide switches OpenClaw to `google/gemini-3.1-pro-preview` using `GEMINI_API_KEY` instead of OAuth.
+- Main guide: [`./shadow-model-registry/README.en.md`](./shadow-model-registry/README.en.md)
+- Chinese guide: [`./shadow-model-registry/README.md`](./shadow-model-registry/README.md)
+- Main script: [`./shadow-model-registry/openclaw-model-patch.py`](./shadow-model-registry/openclaw-model-patch.py)
+- `openai-codex/gpt-5.4` example: [`./shadow-model-registry/examples/openai-codex-gpt-5.4.json`](./shadow-model-registry/examples/openai-codex-gpt-5.4.json)
 
-## Scope
+## Why this repository exists
 
-- OpenClaw: `2026.2.19-2` and nearby builds
-- OS: macOS
-- Target model: `gemini-3.1-pro-preview`
-- Updated: 2026-02-20
+- the workflow is not tied to one provider
+- it applies to OpenAI / Codex, Gemini, and similar “model ships first, framework support lands later” situations
+- it solves a recurring OpenClaw problem class rather than a one-off model integration
 
-## 1. Set `GEMINI_API_KEY`
+## Current status
 
-Create a Gemini API key in [Google AI Studio](https://aistudio.google.com/) and write it into `~/.openclaw/.env`:
+- `openai-codex/gpt-5.4` has been enabled successfully in a local OpenClaw `2026.3.2` setup
+- the `models list --all` display-layer omission was also reproduced and patched locally
+- the findings were pushed upstream as OpenClaw issues/comments
 
-```bash
-read -s "GEMINI_API_KEY?Paste GEMINI_API_KEY and press Enter: "; echo
-mkdir -p ~/.openclaw
-if rg -q '^GEMINI_API_KEY=' ~/.openclaw/.env 2>/dev/null; then
-  sed -i '' "s|^GEMINI_API_KEY=.*|GEMINI_API_KEY=$GEMINI_API_KEY|" ~/.openclaw/.env
-else
-  printf '\nGEMINI_API_KEY=%s\n' "$GEMINI_API_KEY" >> ~/.openclaw/.env
-fi
-unset GEMINI_API_KEY
-```
+## Archived material
 
-## 2. Update `~/.openclaw/openclaw.json`
+This repository originally centered on a `Gemini 3.1 Pro API` integration guide. Since upstream support has effectively caught up, that content is now archived instead of being the main maintenance target:
 
-Add these pieces:
+- [`./archive/gemini-3.1-pro/README.en.md`](./archive/gemini-3.1-pro/README.en.md)
 
-1. allow `google/gemini-3.1-pro-preview` in `agents.defaults.models`
-2. register `models.providers.google`
-3. add a `gemini` agent with 3.1 as primary and 3.0 as fallback
-4. optionally bind a Discord channel to the `gemini` agent
-
-Reference: [`./examples/openclaw.snippet.json`](./examples/openclaw.snippet.json)
-
-## 3. Restart the gateway
+If you want to start immediately, this is the shortest path:
 
 ```bash
-openclaw gateway restart
-openclaw gateway status --json
+python3 shadow-model-registry/openclaw-model-patch.py \
+  --overrides shadow-model-registry/examples/openai-codex-gpt-5.4.json \
+  --dry-run
 ```
-
-## 4. Verify with a real call
-
-Check model resolution:
-
-```bash
-openclaw models status --json --agent gemini
-```
-
-Then run a real request:
-
-```bash
-openclaw agent --local --agent gemini --message 'Reply with OK only' --json --timeout 45
-```
-
-Expected result:
-
-- `payloads[0].text = OK`
-- `meta.agentMeta.provider = google`
-- `meta.agentMeta.model = gemini-3.1-pro-preview`
-
-## 5. Common errors
-
-### `Unknown model: google/gemini-3.1-pro-preview`
-
-- Cause: `models.providers.google.models` does not include the model
-- Fix: register it in the provider catalog, then restart the gateway
-
-### `ERR_CONNECTION_REFUSED (localhost)`
-
-- Cause: OpenClaw gateway is not running
-- Fix: run `openclaw gateway restart`, then confirm with `openclaw gateway status --json`
-
-### `HTTP 401 ... VERCEL_OIDC_TOKEN`
-
-- That belongs to a Vercel AI Gateway OIDC route, not the direct Google API route in this guide
-- If you follow this guide, ignore it and use `GEMINI_API_KEY`
-
-## 6. Discord channel binding example
-
-```json
-{
-  "agentId": "gemini",
-  "match": {
-    "channel": "discord",
-    "peer": { "kind": "channel", "id": "REPLACE_WITH_CHANNEL_ID" }
-  }
-}
-```
-
-## 7. Security notes
-
-- Do not commit `~/.openclaw/.env`
-- Do not push real API keys to GitHub
-- Redact email, token, and project identifiers before sharing screenshots
-
-If you only want a one-line verification:
-
-```bash
-openclaw agent --local --agent gemini --message 'Reply with OK only' --json --timeout 45 | jq -r '.meta.agentMeta | "\(.provider) \(.model)"'
-```
-
-If it prints `google gemini-3.1-pro-preview`, the setup is working.
