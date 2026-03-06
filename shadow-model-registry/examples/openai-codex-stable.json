@@ -1,0 +1,30 @@
+{
+  "agents": {
+    "eng": {
+      "model": {
+        "primary": "openai-codex/gpt-5.3-codex",
+        "fallbacks": [
+          "zai/glm-5"
+        ]
+      },
+      "allowlist": {
+        "openai-codex/gpt-5.3-codex": {}
+      },
+      "sessionOverrides": {
+        "agent:eng:main": {
+          "modelProvider": "openai-codex",
+          "model": "gpt-5.3-codex",
+          "thinkingLevel": "xhigh",
+          "reasoningLevel": "off"
+        }
+      },
+      "healthcheck": {
+        "prompt": "healthcheck: reply with OK and current provider/model only",
+        "expectProvider": "openai-codex",
+        "expectModel": "gpt-5.3-codex",
+        "expectText": "OK openai-codex/gpt-5.3-codex",
+        "timeoutSeconds": 120
+      }
+    }
+  }
+}

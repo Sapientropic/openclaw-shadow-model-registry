@@ -1,3 +1,19 @@
+# OpenClaw 模型接入指南
+
+[English README](./README.en.md)
+
+这个仓库现在包含两类内容：
+
+- `Gemini 3.1 Pro API 路线`：适合把 OpenClaw 稳定接到 `google/gemini-3.1-pro-preview`
+- `影子模型目录 / Shadow Model Registry`：适合在 OpenClaw 上游 catalog 还没跟进时，本地先补丁接入新模型，并带真实 healthcheck 与自动回滚
+
+快速入口：
+
+- Gemini 教程：[`./examples/openclaw.snippet.json`](./examples/openclaw.snippet.json)
+- 影子模型目录：[`./shadow-model-registry/README.md`](./shadow-model-registry/README.md)
+
+---
+
 # OpenClaw 接入 Gemini 3.1 Pro（API 路线）
 
 这份教程用于把 OpenClaw 稳定切到 `google/gemini-3.1-pro-preview`，并可选绑定 Discord 专用频道。  
