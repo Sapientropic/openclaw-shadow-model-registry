@@ -34,9 +34,10 @@ The goal is not to hand-edit live config and hope for the best. The goal is to p
 
 ## Current status
 
-- `openai-codex/gpt-5.4` has been enabled successfully in a local OpenClaw `2026.3.2` setup
-- the `models list --all` display-layer omission was also reproduced and patched locally
-- the findings were pushed upstream as OpenClaw issues/comments
+- the forward-compat workflow for cases like `openai-codex/gpt-5.4` has continued to hold up in local testing on OpenClaw `2026.3.7`
+- runtime forward-compat and display-layer / canonical model facts can still diverge; for example, latest stable may still omit config-injected models from `models list --all`
+- this repository should not be treated as a permanent substitute for upstream design fixes in catalog / canonical model facts
+- the findings have been pushed upstream as OpenClaw issues / PR follow-ups
 
 ## Archived material
 

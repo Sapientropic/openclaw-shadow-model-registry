@@ -64,5 +64,5 @@ python3 shadow-model-registry/openclaw-model-patch.py \
 ## 已知限制
 
 - 当前 healthcheck 仍会写入真实 session transcript
-- 有些展示层命令可能仍比运行层更新慢，例如 `models list` 不一定马上列出你补进去的新模型
+- 截至 OpenClaw `2026.3.7`，有些展示层命令仍可能比运行层更新慢，例如 `models list --all` 不一定马上列出你补进去的 config-injected model
 - 某些 thinking 白名单仍可能需要单独补 OpenClaw 上游

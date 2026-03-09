@@ -32,9 +32,10 @@
 
 ## 当前状态
 
-- `openai-codex/gpt-5.4` 已在本地 OpenClaw `2026.3.2` 实战跑通
-- `models list --all` 的显示层漏项问题也已定位并本地补平
-- 相关发现已经整理并反馈到 OpenClaw 上游 issues
+- `openai-codex/gpt-5.4` 这类“新模型先发布、OpenClaw catalog 后补”的场景，已在本地 OpenClaw `2026.3.7` 上继续验证过
+- 运行层前向兼容和显示层 / canonical model facts 仍可能不同步；例如最新 stable 下，`models list --all` 对 config-injected models 仍可能漏项
+- 这类显示层 / canonical facts 缺口目前仍以 OpenClaw 上游 issue / PR 跟进，不应把本仓库误解成上游设计缺口的永久替代
+- 相关发现已经整理并反馈到 OpenClaw 上游 issues / PR
 
 ## 历史归档
 

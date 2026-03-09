@@ -64,5 +64,5 @@ The fact that a model exists on the OpenAI API platform does not mean OpenClaw's
 ## Known limitations
 
 - the healthcheck still writes into a real long-lived session transcript
-- some display-layer commands may lag behind runtime support
+- as of OpenClaw `2026.3.7`, some display-layer commands may still lag behind runtime support; for example, `models list --all` may still omit config-injected models
 - OpenClaw may still need an upstream thinking whitelist patch for certain new models
