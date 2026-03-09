@@ -21,6 +21,7 @@
 
 - 主说明：[`./shadow-model-registry/README.md`](./shadow-model-registry/README.md)
 - 英文说明：[`./shadow-model-registry/README.en.md`](./shadow-model-registry/README.en.md)
+- DeepSeek 下一代模型预检：[`./shadow-model-registry/DeepSeek-next-preflight.md`](./shadow-model-registry/DeepSeek-next-preflight.md)
 - 主脚本：[`./shadow-model-registry/openclaw-model-patch.py`](./shadow-model-registry/openclaw-model-patch.py)
 - `openai-codex/gpt-5.4` 示例：[`./shadow-model-registry/examples/openai-codex-gpt-5.4.json`](./shadow-model-registry/examples/openai-codex-gpt-5.4.json)
 
@@ -36,6 +37,7 @@
 - 运行层前向兼容和显示层 / canonical model facts 仍可能不同步；例如最新 stable 下，`models list --all` 对 config-injected models 仍可能漏项
 - 这类显示层 / canonical facts 缺口目前仍以 OpenClaw 上游 issue / PR 跟进，不应把本仓库误解成上游设计缺口的永久替代
 - 相关发现已经整理并反馈到 OpenClaw 上游 issues / PR
+- 对“可能很快发布、但官方 model id / transport 还没定”的模型，不建议提前伪造可执行补丁；更稳的是先准备 preflight checklist 和 skeleton
 
 ## 历史归档
 

@@ -23,6 +23,7 @@ The goal is not to hand-edit live config and hope for the best. The goal is to p
 
 - Main guide: [`./shadow-model-registry/README.en.md`](./shadow-model-registry/README.en.md)
 - Chinese guide: [`./shadow-model-registry/README.md`](./shadow-model-registry/README.md)
+- DeepSeek next-model preflight: [`./shadow-model-registry/DeepSeek-next-preflight.en.md`](./shadow-model-registry/DeepSeek-next-preflight.en.md)
 - Main script: [`./shadow-model-registry/openclaw-model-patch.py`](./shadow-model-registry/openclaw-model-patch.py)
 - `openai-codex/gpt-5.4` example: [`./shadow-model-registry/examples/openai-codex-gpt-5.4.json`](./shadow-model-registry/examples/openai-codex-gpt-5.4.json)
 
@@ -38,6 +39,7 @@ The goal is not to hand-edit live config and hope for the best. The goal is to p
 - runtime forward-compat and display-layer / canonical model facts can still diverge; for example, latest stable may still omit config-injected models from `models list --all`
 - this repository should not be treated as a permanent substitute for upstream design fixes in catalog / canonical model facts
 - the findings have been pushed upstream as OpenClaw issues / PR follow-ups
+- for models that seem imminent but still lack an official model id / transport contract, it is safer to prepare a preflight checklist and skeleton first instead of shipping a fake runnable patch
 
 ## Archived material
 
